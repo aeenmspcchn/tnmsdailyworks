@@ -1,6 +1,7 @@
 // Application State
 let currentUser = null;
 let workEntries = [];
+let editingEntryId = null;
 
 // Initialize App
 document.addEventListener("DOMContentLoaded", () => {
@@ -19,7 +20,6 @@ function loadStoredData() {
       workEntries = [];
     }
   } else {
-    // Seed sample data if empty
     workEntries = [
       {
         id: "1",
@@ -28,15 +28,6 @@ function loadStoredData() {
         workDoneBy: "John Doe",
         workDoneOn: "Main Portal API",
         description: "Configured backend REST API routes and validated response formats.",
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: "2",
-        date: new Date().toISOString().split("T")[0],
-        typeOfWork: "Inspection",
-        workDoneBy: "Jane Smith",
-        workDoneOn: "Server Room B",
-        description: "Routine hardware diagnostic checks. Replaced faulty ethernet cables.",
         timestamp: new Date().toISOString()
       }
     ];
@@ -127,30 +118,93 @@ function switchTab(tab) {
   }
 }
 
-// Form Submission
+// Form Submission (Supports Create & Edit)
 function handleFormSubmit(e) {
   e.preventDefault();
   
-  const newEntry = {
-    id: Date.now().toString(),
-    date: document.getElementById("formDate").value,
-    typeOfWork: document.getElementById("formTypeOfWork").value,
-    workDoneBy: document.getElementById("formWorkDoneBy").value,
-    workDoneOn: document.getElementById("formWorkDoneOn").value,
-    description: document.getElementById("formDescription").value,
-    timestamp: new Date().toISOString()
-  };
+  const date = document.getElementById("formDate").value;
+  const typeOfWork = document.getElementById("formTypeOfWork").value;
+  const workDoneBy = document.getElementById("formWorkDoneBy").value;
+  const workDoneOn = document.getElementById("formWorkDoneOn").value;
+  const description = document.getElementById("formDescription").value;
 
-  workEntries.unshift(newEntry);
+  if (editingEntryId) {
+    // Update existing entry
+    workEntries = workEntries.map(item => {
+      if (item.id === editingEntryId) {
+        return { ...item, date, typeOfWork, workDoneBy, workDoneOn, description };
+      }
+      return item;
+    });
+    editingEntryId = null;
+    document.getElementById("formTitleText").textContent = "New Work Entry";
+    document.getElementById("submitBtnText").textContent = "Save Entry";
+    alert("Work entry updated successfully!");
+  } else {
+    // Create new entry
+    const newEntry = {
+      id: Date.now().toString(),
+      date,
+      typeOfWork,
+      workDoneBy,
+      workDoneOn,
+      description,
+      timestamp: new Date().toISOString()
+    };
+    workEntries.unshift(newEntry);
+    alert("Work entry saved successfully!");
+  }
+
   saveEntries();
 
-  // Reset form fields except "Work Done By"
+  // Reset form fields
   document.getElementById("formTypeOfWork").value = "";
   document.getElementById("formWorkDoneOn").value = "";
   document.getElementById("formDescription").value = "";
+  document.getElementById("formWorkDoneBy").value = currentUser.username;
 
-  alert("Work entry saved successfully!");
   switchTab("report");
+}
+
+// Edit Entry Trigger
+function editEntry(id) {
+  const entry = workEntries.find(e => e.id === id);
+  if (!entry) return;
+
+  // Check Permissions: Operators can only edit their own entries. Supervisors/Managers can edit any.
+  if (currentUser.role === 'Operator' && entry.workDoneBy !== currentUser.username) {
+    alert("Permission denied: You can only edit your own work entries as an Operator.");
+    return;
+  }
+
+  editingEntryId = entry.id;
+  document.getElementById("formDate").value = entry.date;
+  document.getElementById("formTypeOfWork").value = entry.typeOfWork;
+  document.getElementById("formWorkDoneBy").value = entry.workDoneBy;
+  document.getElementById("formWorkDoneOn").value = entry.workDoneOn;
+  document.getElementById("formDescription").value = entry.description;
+
+  document.getElementById("formTitleText").textContent = "Edit Work Entry (#" + entry.id.slice(-4) + ")";
+  document.getElementById("submitBtnText").textContent = "Update Entry";
+
+  switchTab("entry");
+}
+
+// Delete Entry Trigger
+function deleteEntry(id) {
+  const entry = workEntries.find(e => e.id === id);
+  if (!entry) return;
+
+  if (currentUser.role === 'Operator' && entry.workDoneBy !== currentUser.username) {
+    alert("Permission denied: You can only delete your own work entries.");
+    return;
+  }
+
+  if (confirm("Are you sure you want to delete this work log?")) {
+    workEntries = workEntries.filter(e => e.id !== id);
+    saveEntries();
+    renderReports();
+  }
 }
 
 // Filter Preset Handler
@@ -188,7 +242,6 @@ function renderReports() {
   const endDate = document.getElementById("filterEndDate").value;
   const container = document.getElementById("reportContainer");
 
-  // Filter entries
   let filtered = workEntries.filter(entry => {
     if (startDate && entry.date < startDate) return false;
     if (endDate && entry.date > endDate) return false;
@@ -213,14 +266,12 @@ function renderReports() {
     return;
   }
 
-  // Group by Date
   const grouped = {};
   filtered.forEach(entry => {
     if (!grouped[entry.date]) grouped[entry.date] = [];
     grouped[entry.date].push(entry);
   });
 
-  // Sort dates descending
   const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
   container.innerHTML = sortedDates.map(dateStr => {
@@ -233,7 +284,7 @@ function renderReports() {
     });
 
     return `
-      <div class="day-group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="day-group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
         <div class="px-6 py-4 bg-slate-50 border-b border-gray-200 flex justify-between items-center">
           <div class="flex items-center space-x-2">
             <i class="fa-regular fa-calendar-days text-indigo-600"></i>
@@ -246,20 +297,31 @@ function renderReports() {
 
         <div class="divide-y divide-gray-100">
           ${dayEntries.map(item => `
-            <div class="p-6 hover:bg-gray-50/50 transition">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                <div class="flex items-center space-x-2">
+            <div class="p-6 hover:bg-gray-50/50 transition flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div class="space-y-2 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
                   <span class="px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md">
                     ${item.typeOfWork}
                   </span>
                   <span class="text-xs text-gray-400">Target: <strong class="text-gray-700">${item.workDoneOn}</strong></span>
+                  <span class="text-xs text-gray-500 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">
+                    <i class="fa-solid fa-user text-indigo-400 mr-1"></i>${item.workDoneBy}
+                  </span>
                 </div>
-                <div class="text-xs text-gray-500 flex items-center space-x-1">
-                  <i class="fa-solid fa-user-gear text-gray-400"></i>
-                  <span>${item.workDoneBy}</span>
-                </div>
+                <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-line">${item.description}</p>
               </div>
-              <p class="text-sm text-gray-800 mt-2 leading-relaxed whitespace-pre-line">${item.description}</p>
+
+              <!-- Edit & Delete Buttons -->
+              <div class="flex items-center space-x-2 shrink-0">
+                <button onclick="editEntry('${item.id}')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                  <span>Edit</span>
+                </button>
+                <button onclick="deleteEntry('${item.id}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                  <i class="fa-solid fa-trash"></i>
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
           `).join('')}
         </div>
