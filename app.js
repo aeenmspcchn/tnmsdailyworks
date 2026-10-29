@@ -1,3 +1,14 @@
+// ==========================================
+// 1. CONFIGURE USERS, ROLES & PASSWORDS HERE
+// ==========================================
+const SYSTEM_USERS = [
+  { username: "John Doe", role: "Operator", pin: "1234" },
+  { username: "Jane Smith", role: "Operator", pin: "1234" },
+  { username: "Robert Fox", role: "Supervisor", pin: "5678" },
+  { username: "Emily Davis", role: "Manager", pin: "admin99" },
+  { username: "Admin User", role: "Manager", pin: "admin99" }
+];
+
 // Application State
 let currentUser = null;
 let workEntries = [];
@@ -5,12 +16,20 @@ let editingEntryId = null;
 
 // Initialize App
 document.addEventListener("DOMContentLoaded", () => {
+  populateUserDropdown();
   loadStoredData();
   setDefaultDates();
   checkAuthSession();
 });
 
-// Load entries from localStorage
+function populateUserDropdown() {
+  const select = document.getElementById("loginUserSelect");
+  if (!select) return;
+  
+  select.innerHTML = '<option value="">-- Choose User Profile --</option>' + 
+    SYSTEM_USERS.map(u => `<option value="${u.username}">${u.username} (${u.role})</option>`).join('');
+}
+
 function loadStoredData() {
   const data = localStorage.getItem("work_portal_entries");
   if (data) {
@@ -46,7 +65,6 @@ function setDefaultDates() {
   document.getElementById("filterEndDate").value = today;
 }
 
-// Auth Handlers
 function checkAuthSession() {
   const session = localStorage.getItem("work_portal_user");
   if (session) {
@@ -57,17 +75,27 @@ function checkAuthSession() {
   }
 }
 
+// Password Verification Handler
 function handleLogin(e) {
   e.preventDefault();
-  const username = document.getElementById("loginUsername").value.trim();
-  const role = document.getElementById("loginRole").value;
+  const selectedUsername = document.getElementById("loginUserSelect").value;
+  const enteredPassword = document.getElementById("loginPassword").value;
 
-  if (username) {
-    currentUser = { username, role };
+  if (!selectedUsername) return;
+
+  const foundUser = SYSTEM_USERS.find(u => u.username === selectedUsername);
+
+  if (foundUser && foundUser.pin === enteredPassword) {
+    currentUser = { username: foundUser.username, role: foundUser.role };
     localStorage.setItem("work_portal_user", JSON.stringify(currentUser));
+    
     document.getElementById("authScreen").classList.add("hidden");
+    document.getElementById("loginPassword").value = ""; // clear password
     updateUserUI();
     renderReports();
+  } else {
+    alert("Incorrect password! Please try again.");
+    document.getElementById("loginPassword").value = "";
   }
 }
 
@@ -118,7 +146,7 @@ function switchTab(tab) {
   }
 }
 
-// Form Submission (Supports Create & Edit)
+// Form Submission (Create & Edit)
 function handleFormSubmit(e) {
   e.preventDefault();
   
@@ -129,7 +157,6 @@ function handleFormSubmit(e) {
   const description = document.getElementById("formDescription").value;
 
   if (editingEntryId) {
-    // Update existing entry
     workEntries = workEntries.map(item => {
       if (item.id === editingEntryId) {
         return { ...item, date, typeOfWork, workDoneBy, workDoneOn, description };
@@ -141,7 +168,6 @@ function handleFormSubmit(e) {
     document.getElementById("submitBtnText").textContent = "Save Entry";
     alert("Work entry updated successfully!");
   } else {
-    // Create new entry
     const newEntry = {
       id: Date.now().toString(),
       date,
@@ -157,7 +183,6 @@ function handleFormSubmit(e) {
 
   saveEntries();
 
-  // Reset form fields
   document.getElementById("formTypeOfWork").value = "";
   document.getElementById("formWorkDoneOn").value = "";
   document.getElementById("formDescription").value = "";
@@ -166,14 +191,12 @@ function handleFormSubmit(e) {
   switchTab("report");
 }
 
-// Edit Entry Trigger
 function editEntry(id) {
   const entry = workEntries.find(e => e.id === id);
   if (!entry) return;
 
-  // Check Permissions: Operators can only edit their own entries. Supervisors/Managers can edit any.
   if (currentUser.role === 'Operator' && entry.workDoneBy !== currentUser.username) {
-    alert("Permission denied: You can only edit your own work entries as an Operator.");
+    alert("Permission Denied: Operators can only edit their own work logs.");
     return;
   }
 
@@ -190,24 +213,22 @@ function editEntry(id) {
   switchTab("entry");
 }
 
-// Delete Entry Trigger
 function deleteEntry(id) {
   const entry = workEntries.find(e => e.id === id);
   if (!entry) return;
 
   if (currentUser.role === 'Operator' && entry.workDoneBy !== currentUser.username) {
-    alert("Permission denied: You can only delete your own work entries.");
+    alert("Permission Denied: Operators can only delete their own work logs.");
     return;
   }
 
-  if (confirm("Are you sure you want to delete this work log?")) {
+  if (confirm("Are you sure you want to delete this entry?")) {
     workEntries = workEntries.filter(e => e.id !== id);
     saveEntries();
     renderReports();
   }
 }
 
-// Filter Preset Handler
 function setFilterPreset(preset) {
   const startDateInput = document.getElementById("filterStartDate");
   const endDateInput = document.getElementById("filterEndDate");
@@ -236,7 +257,6 @@ function setFilterPreset(preset) {
   renderReports();
 }
 
-// Report Rendering Logic
 function renderReports() {
   const startDate = document.getElementById("filterStartDate").value;
   const endDate = document.getElementById("filterEndDate").value;
@@ -248,12 +268,9 @@ function renderReports() {
     return true;
   });
 
-  // Update statistics
   document.getElementById("statTotalEntries").textContent = filtered.length;
-  const uniqueStaff = new Set(filtered.map(e => e.workDoneBy)).size;
-  const uniqueTypes = new Set(filtered.map(e => e.typeOfWork)).size;
-  document.getElementById("statUniqueStaff").textContent = uniqueStaff;
-  document.getElementById("statCategories").textContent = uniqueTypes;
+  document.getElementById("statUniqueStaff").textContent = new Set(filtered.map(e => e.workDoneBy)).size;
+  document.getElementById("statCategories").textContent = new Set(filtered.map(e => e.typeOfWork)).size;
 
   if (filtered.length === 0) {
     container.innerHTML = `
@@ -311,7 +328,6 @@ function renderReports() {
                 <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-line">${item.description}</p>
               </div>
 
-              <!-- Edit & Delete Buttons -->
               <div class="flex items-center space-x-2 shrink-0">
                 <button onclick="editEntry('${item.id}')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-medium transition flex items-center space-x-1">
                   <i class="fa-solid fa-pen-to-square"></i>
@@ -330,7 +346,6 @@ function renderReports() {
   }).join('');
 }
 
-// CSV Export Utility
 function exportCSV() {
   if (workEntries.length === 0) {
     alert("No data available to export.");
