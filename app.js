@@ -1,4 +1,4 @@
-// ==========================================
+ // ==========================================
 // SYSTEM USERS & ROLES CONFIGURATION
 // ==========================================
 const SYSTEM_USERS = [
@@ -39,7 +39,7 @@ function loadStoredData() {
       workEntries = [];
     }
   } else {
-    workEntries = []; // Starts completely empty with no hardcoded sample data
+    workEntries = [];
   }
 }
 
@@ -132,7 +132,7 @@ function handleFormSubmit(e) {
   const date = document.getElementById("formDate").value;
   const typeOfWork = document.getElementById("formTypeOfWork").value;
   const workDoneBy = currentUser.username;
-  const workDoneOn = document.getElementById("formWorkDoneOn").value;
+  const workDoneOn = document.getElementById("formWorkDoneOn").value; // Sub Category value
   const description = document.getElementById("formDescription").value;
 
   if (editingEntryId) {
@@ -160,7 +160,7 @@ function handleFormSubmit(e) {
     alert("Work entry saved successfully!");
   }
 
-    saveEntries();
+  saveEntries();
 
   document.getElementById("formTypeOfWork").value = "";
   document.getElementById("formWorkDoneOn").value = "";
@@ -251,7 +251,7 @@ function copyWhatsAppReport() {
     return;
   }
 
-  // Format Date for Header (e.g. 28/10/2026)
+  // Format Date for Header (e.g. 29/10/2026)
   const [year, month, day] = startDate.split("-");
   const formattedDateStr = `${day}/${month}/${year}`;
 
@@ -333,7 +333,7 @@ function renderReports() {
                   <span class="px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md">
                     ${item.typeOfWork}
                   </span>
-                  <span class="text-xs text-gray-400">Target: <strong class="text-gray-700">${item.workDoneOn}</strong></span>
+                  <span class="text-xs text-gray-400">Sub Category: <strong class="text-gray-700">${item.workDoneOn}</strong></span>
                 </div>
                 <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-line">${item.description}</p>
               </div>
@@ -362,7 +362,7 @@ function exportCSV() {
     return;
   }
 
-  const headers = ["ID", "Date", "Type of Work", "Work Done By", "Work Done On", "Description"];
+  const headers = ["ID", "Date", "Type of Work", "Work Done By", "Sub Category", "Description"];
   const rows = workEntries.map(e => [
     `"${e.id}"`,
     `"${e.date}"`,
