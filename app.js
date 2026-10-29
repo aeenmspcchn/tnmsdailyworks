@@ -1,4 +1,4 @@
-// ==========================================
+ // ==========================================
 // SYSTEM USERS & ROLES CONFIGURATION
 // ==========================================
 const SYSTEM_USERS = [
@@ -26,7 +26,6 @@ function populateUserDropdown() {
   const select = document.getElementById("loginUserSelect");
   if (!select) return;
   
-  // Displays ONLY the username in the dropdown list options
   select.innerHTML = '<option value="">-- Select Username --</option>' + 
     SYSTEM_USERS.map(u => `<option value="${u.username}|${u.role}">${u.username}</option>`).join('');
 }
@@ -101,7 +100,6 @@ function updateUserUI() {
   if (!currentUser) return;
   document.getElementById("currentUserName").textContent = currentUser.username;
   document.getElementById("currentUserRole").textContent = currentUser.role;
-  document.getElementById("formWorkDoneBy").value = currentUser.username;
   
   const initials = currentUser.username.slice(0, 2).toUpperCase();
   document.getElementById("userAvatar").textContent = initials;
@@ -138,13 +136,13 @@ function switchTab(tab) {
   }
 }
 
-// Form Submission (Create & Edit)
+// Form Submission (Automatically uses current user's name)
 function handleFormSubmit(e) {
   e.preventDefault();
   
   const date = document.getElementById("formDate").value;
   const typeOfWork = document.getElementById("formTypeOfWork").value;
-  const workDoneBy = currentUser.username;
+  const workDoneBy = currentUser.username; // Automatically assigned from login
   const workDoneOn = document.getElementById("formWorkDoneOn").value;
   const description = document.getElementById("formDescription").value;
 
@@ -194,7 +192,6 @@ function editEntry(id) {
   editingEntryId = entry.id;
   document.getElementById("formDate").value = entry.date;
   document.getElementById("formTypeOfWork").value = entry.typeOfWork;
-  document.getElementById("formWorkDoneBy").value = entry.workDoneBy;
   document.getElementById("formWorkDoneOn").value = entry.workDoneOn;
   document.getElementById("formDescription").value = entry.description;
 
