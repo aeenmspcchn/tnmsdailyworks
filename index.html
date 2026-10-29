@@ -122,29 +122,35 @@
               <input type="date" id="formDate" required class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
             </div>
 
-            <!-- Type of Work -->
+            <!-- Type of Work (Category) -->
             <div>
               <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                 Type of Work <span class="text-red-500">*</span>
               </label>
               <select id="formTypeOfWork" required class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                 <option value="">Select Category</option>
-                <option value="Development">Development</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Inspection">Inspection</option>
-                <option value="Support & Troubleshooting">Support & Troubleshooting</option>
-                <option value="Documentation">Documentation</option>
-                <option value="Administrative">Administrative</option>
+                <option value="ICCP">ICCP</option>
+                <option value="101 Data">101 Data</option>
+                <option value="DCU/DCPC">DCU/DCPC</option>
+                <option value="MCC Data">MCC Data</option>
+                <option value="BCC Data">BCC Data</option>
+                <option value="Coupler">Coupler</option>
+                <option value="IT/ERP data">IT/ERP data</option>
+                <option value="AGC Data">AGC Data</option>
+                <option value="PMU">PMU</option>
+                <option value="DREL">DREL</option>
+                <option value="UNMS">UNMS</option>
+                <option value="General">General</option>
               </select>
             </div>
           </div>
 
-          <!-- Work Done On (Target / Asset) -->
+          <!-- Sub Category -->
           <div>
             <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Work Done On (Asset / System / Target) <span class="text-red-500">*</span>
+              Sub Category <span class="text-red-500">*</span>
             </label>
-            <input type="text" id="formWorkDoneOn" required placeholder="Project A / Server #12 / Client X" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            <input type="text" id="formWorkDoneOn" required placeholder="Erode DREL / Pulianthope MCC data / ..." class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
           </div>
 
           <!-- Description -->
