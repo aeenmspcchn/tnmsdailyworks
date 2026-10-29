@@ -76,29 +76,52 @@ function checkAuthSession() {
 }
 
 // Password Verification Handler
-// Password Verification Handler for Typed Usernames
-function handleLogin(e) {
-  e.preventDefault();
-  const typedUsername = document.getElementById("loginUsername").value.trim();
-  const enteredPassword = document.getElementById("loginPassword").value;
+// Bulletproof Login Handler with Debug Alerts
+function handleLogin(event) {
+  if (event) event.preventDefault();
 
-  // Search case-insensitively for the user in our SYSTEM_USERS list
+  const userField = document.getElementById("loginUsername");
+  const passField = document.getElementById("loginPassword");
+
+  // Safety check if elements exist in HTML
+  if (!userField || !passField) {
+    alert("Error: Login input fields not found in HTML. Check your index.html IDs.");
+    return;
+  }
+
+  const typedUsername = userField.value.trim();
+  const enteredPassword = passField.value;
+
+  console.log("Attempting login for:", typedUsername); // Visible in F12 Console
+
+  if (!typedUsername || !enteredPassword) {
+    alert("Please enter both username and password.");
+    return;
+  }
+
+  // Find user case-insensitively
   const foundUser = SYSTEM_USERS.find(u => u.username.toLowerCase() === typedUsername.toLowerCase());
 
-  if (foundUser && foundUser.pin === enteredPassword) {
-    currentUser = { username: foundUser.username, role: foundUser.role };
-    localStorage.setItem("work_portal_user", JSON.stringify(currentUser));
-    
-    document.getElementById("authScreen").classList.add("hidden");
-    document.getElementById("loginPassword").value = ""; // clear password
-    updateUserUI();
-    renderReports();
+  if (foundUser) {
+    if (foundUser.pin === enteredPassword) {
+      currentUser = { username: foundUser.username, role: foundUser.role };
+      localStorage.setItem("work_portal_user", JSON.stringify(currentUser));
+      
+      const authScreen = document.getElementById("authScreen");
+      if (authScreen) authScreen.classList.add("hidden");
+      
+      passField.value = "";
+      updateUserUI();
+      renderReports();
+    } else {
+      alert("Incorrect password for user: " + foundUser.username);
+      passField.value = "";
+    }
   } else {
-    alert("Incorrect username or password! Please check your credentials.");
-    document.getElementById("loginPassword").value = "";
+    alert("Username '" + typedUsername + "' not found in system users list.");
+    passField.value = "";
   }
 }
-
 function handleLogout() {
   localStorage.removeItem("work_portal_user");
   currentUser = null;
