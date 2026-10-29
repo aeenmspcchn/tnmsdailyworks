@@ -1,6 +1,10 @@
  // ==========================================
 // SYSTEM USERS & ROLES CONFIGURATION
 // ==========================================
+
+// Replace this with your actual Google Apps Script Web App URL from Step 3
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx4RR8VEm_iYxXPvMeDjUY4TxTI4uuc37RLIRjp68Q4RYR2OYhxh390EXSsv1ZTvE8i/exec";
+
 const SYSTEM_USERS = [
   { username: "TA", role: "Operator" },
   { username: "JE2", role: "Operator" },
@@ -383,3 +387,47 @@ function exportCSV() {
   link.click();
   document.body.removeChild(link);
 }
+
+
+
+// Load data from Google Sheet on startup
+function loadStoredData() {
+  fetch(WEB_APP_URL)
+    .then(response => response.json())
+    .then(data => {
+      workEntries = data || [];
+      renderReports();
+    })
+    .catch(error => {
+      console.error("Error loading from cloud:", error);
+      // Fallback to local storage if offline
+      const localData = localStorage.getItem("work_portal_entries");
+      if (localData) workEntries = JSON.parse(localData);
+      renderReports();
+    });
+}
+
+// Save entry to Google Sheet
+function saveEntryToCloud(newEntry) {
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors", // Required for Google Apps Script web apps
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "save", entry: newEntry })
+  }).then(() => {
+    loadStoredData(); // Refresh list from cloud
+  });
+}
+
+// Delete entry from Google Sheet
+function deleteEntryFromCloud(id) {
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "delete", id: id })
+  }).then(() => {
+    loadStoredData(); // Refresh list from cloud
+  });
+}
+
