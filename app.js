@@ -42,11 +42,11 @@ function loadStoredData() {
     workEntries = [
       {
         id: "1",
-        date: new Date().toISOString().split("T")[0],
-        typeOfWork: "Development",
+        date: "2026-10-28",
+        typeOfWork: "Maintenance",
         workDoneBy: "TA",
-        workDoneOn: "Main Portal API",
-        description: "Configured portal routes and validated response formats.",
+        workDoneOn: "LD Centre",
+        description: "Shifting of all CC, hotline, and telephone connections in the LD Centre to facilitate the placement of new furniture under the ULDC upgradation project.",
         timestamp: new Date().toISOString()
       }
     ];
@@ -136,13 +136,13 @@ function switchTab(tab) {
   }
 }
 
-// Form Submission (Automatically saves under logged-in user without displaying it)
+// Form Submission
 function handleFormSubmit(e) {
   e.preventDefault();
   
   const date = document.getElementById("formDate").value;
   const typeOfWork = document.getElementById("formTypeOfWork").value;
-  const workDoneBy = currentUser.username; // Kept in background for permissions & CSV
+  const workDoneBy = currentUser.username;
   const workDoneOn = document.getElementById("formWorkDoneOn").value;
   const description = document.getElementById("formDescription").value;
 
@@ -243,6 +243,43 @@ function setFilterPreset(preset) {
   }
 
   renderReports();
+}
+
+// Generate WhatsApp Formatted Report from Portal Data
+function copyWhatsAppReport() {
+  const startDate = document.getElementById("filterStartDate").value;
+  const endDate = document.getElementById("filterEndDate").value;
+
+  if (!startDate || startDate !== endDate) {
+    alert("Please select a single specific date using the Filter Date Range (Start Date and End Date set to the same day) to generate the WhatsApp report.");
+    return;
+  }
+
+  let filtered = workEntries.filter(entry => entry.date === startDate);
+
+  if (filtered.length === 0) {
+    alert("No work entries found for " + startDate);
+    return;
+  }
+
+  // Format Date for Header (e.g. 28/10/2026)
+  const [year, month, day] = startDate.split("-");
+  const formattedDateStr = `${day}/${month}/${year}`;
+
+  let reportText = `Good Morning, Sir \n\nAEE/TNMS Sub-Division – ${formattedDateStr} Work Report (TNMS & P&C Lab):\n\n`;
+
+  filtered.forEach((item, index) => {
+    reportText += `${index + 1}. ${item.description}\n`;
+  });
+
+  reportText += `\nThank you, Sir`;
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(reportText).then(() => {
+    alert("WhatsApp report for " + formattedDateStr + " copied to clipboard! You can now paste it directly into WhatsApp.");
+  }).catch(err => {
+    alert("Failed to copy. Please check browser clipboard permissions.");
+  });
 }
 
 function renderReports() {
