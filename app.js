@@ -76,14 +76,14 @@ function checkAuthSession() {
 }
 
 // Password Verification Handler
+// Password Verification Handler for Typed Usernames
 function handleLogin(e) {
   e.preventDefault();
-  const selectedUsername = document.getElementById("loginUserSelect").value;
+  const typedUsername = document.getElementById("loginUsername").value.trim();
   const enteredPassword = document.getElementById("loginPassword").value;
 
-  if (!selectedUsername) return;
-
-  const foundUser = SYSTEM_USERS.find(u => u.username === selectedUsername);
+  // Search case-insensitively for the user in our SYSTEM_USERS list
+  const foundUser = SYSTEM_USERS.find(u => u.username.toLowerCase() === typedUsername.toLowerCase());
 
   if (foundUser && foundUser.pin === enteredPassword) {
     currentUser = { username: foundUser.username, role: foundUser.role };
@@ -94,7 +94,7 @@ function handleLogin(e) {
     updateUserUI();
     renderReports();
   } else {
-    alert("Incorrect password! Please try again.");
+    alert("Incorrect username or password! Please check your credentials.");
     document.getElementById("loginPassword").value = "";
   }
 }
