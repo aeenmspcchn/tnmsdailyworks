@@ -1,14 +1,14 @@
 // ==========================================
-// 1. CONFIGURE USERS, ROLES & PASSWORDS HERE
+// SYSTEM USERS & ROLES CONFIGURATION
 // ==========================================
-
 const SYSTEM_USERS = [
-  { username: "TA", role: "Operator", pin: "1234" },
-  { username: "JE2", role: "Operator", pin: "1234" },
-  { username: "AETNMS", role: "Supervisor", pin: "5678" },
-  { username: "admin", role: "Manager", pin: "admin99" },
-  { username: "AEETNMS", role: "Manager", pin: "admin99" }
+  { username: "TA", role: "Operator" },
+  { username: "JE2", role: "Operator" },
+  { username: "AETNMS", role: "Supervisor" },
+  { username: "admin", role: "Manager" },
+  { username: "AEETNMS", role: "Manager" }
 ];
+
 // Application State
 let currentUser = null;
 let workEntries = [];
@@ -26,8 +26,8 @@ function populateUserDropdown() {
   const select = document.getElementById("loginUserSelect");
   if (!select) return;
   
-  select.innerHTML = '<option value="">-- Choose User Profile --</option>' + 
-    SYSTEM_USERS.map(u => `<option value="${u.username}">${u.username} (${u.role})</option>`).join('');
+  select.innerHTML = '<option value="">-- Select Your Name --</option>' + 
+    SYSTEM_USERS.map(u => `<option value="${u.username}|${u.role}">${u.username} (${u.role})</option>`).join('');
 }
 
 function loadStoredData() {
@@ -44,9 +44,9 @@ function loadStoredData() {
         id: "1",
         date: new Date().toISOString().split("T")[0],
         typeOfWork: "Development",
-        workDoneBy: "John Doe",
+        workDoneBy: "TA",
         workDoneOn: "Main Portal API",
-        description: "Configured backend REST API routes and validated response formats.",
+        description: "Configured portal routes and validated response formats.",
         timestamp: new Date().toISOString()
       }
     ];
@@ -75,53 +75,21 @@ function checkAuthSession() {
   }
 }
 
-// Password Verification Handler
-// Bulletproof Login Handler with Debug Alerts
-function handleLogin(event) {
-  if (event) event.preventDefault();
+// Instant Login Handler
+function handleLogin(e) {
+  e.preventDefault();
+  const val = document.getElementById("loginUserSelect").value;
+  if (!val) return;
 
-  const userField = document.getElementById("loginUsername");
-  const passField = document.getElementById("loginPassword");
-
-  // Safety check if elements exist in HTML
-  if (!userField || !passField) {
-    alert("Error: Login input fields not found in HTML. Check your index.html IDs.");
-    return;
-  }
-
-  const typedUsername = userField.value.trim();
-  const enteredPassword = passField.value;
-
-  console.log("Attempting login for:", typedUsername); // Visible in F12 Console
-
-  if (!typedUsername || !enteredPassword) {
-    alert("Please enter both username and password.");
-    return;
-  }
-
-  // Find user case-insensitively
-  const foundUser = SYSTEM_USERS.find(u => u.username.toLowerCase() === typedUsername.toLowerCase());
-
-  if (foundUser) {
-    if (foundUser.pin === enteredPassword) {
-      currentUser = { username: foundUser.username, role: foundUser.role };
-      localStorage.setItem("work_portal_user", JSON.stringify(currentUser));
-      
-      const authScreen = document.getElementById("authScreen");
-      if (authScreen) authScreen.classList.add("hidden");
-      
-      passField.value = "";
-      updateUserUI();
-      renderReports();
-    } else {
-      alert("Incorrect password for user: " + foundUser.username);
-      passField.value = "";
-    }
-  } else {
-    alert("Username '" + typedUsername + "' not found in system users list.");
-    passField.value = "";
-  }
+  const [username, role] = val.split("|");
+  currentUser = { username, role };
+  
+  localStorage.setItem("work_portal_user", JSON.stringify(currentUser));
+  document.getElementById("authScreen").classList.add("hidden");
+  updateUserUI();
+  renderReports();
 }
+
 function handleLogout() {
   localStorage.removeItem("work_portal_user");
   currentUser = null;
@@ -175,7 +143,7 @@ function handleFormSubmit(e) {
   
   const date = document.getElementById("formDate").value;
   const typeOfWork = document.getElementById("formTypeOfWork").value;
-  const workDoneBy = document.getElementById("formWorkDoneBy").value;
+  const workDoneBy = currentUser.username;
   const workDoneOn = document.getElementById("formWorkDoneOn").value;
   const description = document.getElementById("formDescription").value;
 
@@ -209,7 +177,6 @@ function handleFormSubmit(e) {
   document.getElementById("formTypeOfWork").value = "";
   document.getElementById("formWorkDoneOn").value = "";
   document.getElementById("formDescription").value = "";
-  document.getElementById("formWorkDoneBy").value = currentUser.username;
 
   switchTab("report");
 }
