@@ -1,4 +1,4 @@
- // ==========================================
+// ==========================================
 // SYSTEM USERS & ROLES CONFIGURATION
 // ==========================================
 const SYSTEM_USERS = [
@@ -136,13 +136,13 @@ function switchTab(tab) {
   }
 }
 
-// Form Submission (Automatically uses current user's name)
+// Form Submission (Automatically saves under logged-in user without displaying it)
 function handleFormSubmit(e) {
   e.preventDefault();
   
   const date = document.getElementById("formDate").value;
   const typeOfWork = document.getElementById("formTypeOfWork").value;
-  const workDoneBy = currentUser.username; // Automatically assigned from login
+  const workDoneBy = currentUser.username; // Kept in background for permissions & CSV
   const workDoneOn = document.getElementById("formWorkDoneOn").value;
   const description = document.getElementById("formDescription").value;
 
@@ -257,7 +257,6 @@ function renderReports() {
   });
 
   document.getElementById("statTotalEntries").textContent = filtered.length;
-  document.getElementById("statUniqueStaff").textContent = new Set(filtered.map(e => e.workDoneBy)).size;
   document.getElementById("statCategories").textContent = new Set(filtered.map(e => e.typeOfWork)).size;
 
   if (filtered.length === 0) {
@@ -309,9 +308,6 @@ function renderReports() {
                     ${item.typeOfWork}
                   </span>
                   <span class="text-xs text-gray-400">Target: <strong class="text-gray-700">${item.workDoneOn}</strong></span>
-                  <span class="text-xs text-gray-500 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">
-                    <i class="fa-solid fa-user text-indigo-400 mr-1"></i>${item.workDoneBy}
-                  </span>
                 </div>
                 <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-line">${item.description}</p>
               </div>
