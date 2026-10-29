@@ -1,8 +1,8 @@
- // ==========================================
+// ==========================================
 // SYSTEM USERS & ROLES CONFIGURATION
 // ==========================================
 
-// Replace this with your actual Google Apps Script Web App URL from Step 3
+// Google Apps Script Web App URL
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw98200Yl-PycO5yNL8JjnIm5OSWd8VlalOAEotA3mwWGr0wGS52B3IQ0PU45u2D_Bd/exec";
 
 const SYSTEM_USERS = [
@@ -34,21 +34,52 @@ function populateUserDropdown() {
     SYSTEM_USERS.map(u => `<option value="${u.username}|${u.role}">${u.username}</option>`).join('');
 }
 
+// Load data directly from Google Sheet (with localStorage fallback)
 function loadStoredData() {
-  const data = localStorage.getItem("work_portal_entries");
-  if (data) {
-    try {
-      workEntries = JSON.parse(data);
-    } catch (e) {
-      workEntries = [];
-    }
-  } else {
-    workEntries = [];
-  }
+  fetch(WEB_APP_URL)
+    .then(response => response.json())
+    .then(data => {
+      workEntries = data || [];
+      localStorage.setItem("work_portal_entries", JSON.stringify(workEntries));
+      renderReports();
+    })
+    .catch(error => {
+      console.error("Error loading from cloud:", error);
+      const localData = localStorage.getItem("work_portal_entries");
+      if (localData) {
+        try {
+          workEntries = JSON.parse(localData);
+        } catch (e) {
+          workEntries = [];
+        }
+      }
+      renderReports();
+    });
 }
 
-function saveEntries() {
-  localStorage.setItem("work_portal_entries", JSON.stringify(workEntries));
+// Save entry to Google Sheet
+function saveEntryToCloud(entryObj) {
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "save", entry: entryObj })
+  }).then(() => {
+    // Re-fetch latest entries from sheet after saving
+    setTimeout(loadStoredData, 1000);
+  }).catch(err => console.error("Cloud save failed:", err));
+}
+
+// Delete entry from Google Sheet
+function deleteEntryFromCloud(id) {
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "delete", id: id })
+  }).then(() => {
+    setTimeout(loadStoredData, 1000);
+  }).catch(err => console.error("Cloud delete failed:", err));
 }
 
 function setDefaultDates() {
@@ -129,23 +160,33 @@ function switchTab(tab) {
   }
 }
 
-// Form Submission
+// Form Submission (Saves directly to Google Sheet)
 function handleFormSubmit(e) {
   e.preventDefault();
   
   const date = document.getElementById("formDate").value;
   const typeOfWork = document.getElementById("formTypeOfWork").value;
   const workDoneBy = currentUser.username;
-  const workDoneOn = document.getElementById("formWorkDoneOn").value; // Sub Category value
+  const workDoneOn = document.getElementById("formWorkDoneOn").value; // Sub Category
   const description = document.getElementById("formDescription").value;
 
   if (editingEntryId) {
-    workEntries = workEntries.map(item => {
-      if (item.id === editingEntryId) {
-        return { ...item, date, typeOfWork, workDoneBy, workDoneOn, description };
-      }
-      return item;
-    });
+    const updatedEntry = {
+      id: editingEntryId,
+      date,
+      typeOfWork,
+      workDoneBy,
+      workDoneOn,
+      description,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Update local state immediately
+    workEntries = workEntries.map(item => item.id === editingEntryId ? updatedEntry : item);
+    
+    // Sync update to Google Sheet
+    saveEntryToCloud(updatedEntry);
+
     editingEntryId = null;
     document.getElementById("formTitleText").textContent = "New Work Entry";
     document.getElementById("submitBtnText").textContent = "Save Entry";
@@ -160,12 +201,17 @@ function handleFormSubmit(e) {
       description,
       timestamp: new Date().toISOString()
     };
+    
+    // Add locally and sync to Google Sheet
     workEntries.unshift(newEntry);
-    alert("Work entry saved successfully!");
+    saveEntryToCloud(newEntry);
+    alert("Work entry saved and synced to Google Drive!");
   }
 
-  saveEntries();
+  // Backup to localStorage
+  localStorage.setItem("work_portal_entries", JSON.stringify(workEntries));
 
+  // Reset inputs
   document.getElementById("formTypeOfWork").value = "";
   document.getElementById("formWorkDoneOn").value = "";
   document.getElementById("formDescription").value = "";
@@ -205,7 +251,8 @@ function deleteEntry(id) {
 
   if (confirm("Are you sure you want to delete this entry?")) {
     workEntries = workEntries.filter(e => e.id !== id);
-    saveEntries();
+    localStorage.setItem("work_portal_entries", JSON.stringify(workEntries));
+    deleteEntryFromCloud(id);
     renderReports();
   }
 }
@@ -255,7 +302,6 @@ function copyWhatsAppReport() {
     return;
   }
 
-  // Format Date for Header (e.g. 29/10/2026)
   const [year, month, day] = startDate.split("-");
   const formattedDateStr = `${day}/${month}/${year}`;
 
@@ -267,7 +313,6 @@ function copyWhatsAppReport() {
 
   reportText += `\nThank you, Sir`;
 
-  // Copy to clipboard
   navigator.clipboard.writeText(reportText).then(() => {
     alert("WhatsApp report for " + formattedDateStr + " copied to clipboard! You can now paste it directly into WhatsApp.");
   }).catch(err => {
@@ -387,47 +432,3 @@ function exportCSV() {
   link.click();
   document.body.removeChild(link);
 }
-
-
-
-// Load data from Google Sheet on startup
-function loadStoredData() {
-  fetch(WEB_APP_URL)
-    .then(response => response.json())
-    .then(data => {
-      workEntries = data || [];
-      renderReports();
-    })
-    .catch(error => {
-      console.error("Error loading from cloud:", error);
-      // Fallback to local storage if offline
-      const localData = localStorage.getItem("work_portal_entries");
-      if (localData) workEntries = JSON.parse(localData);
-      renderReports();
-    });
-}
-
-// Save entry to Google Sheet
-function saveEntryToCloud(newEntry) {
-  fetch(WEB_APP_URL, {
-    method: "POST",
-    mode: "no-cors", // Required for Google Apps Script web apps
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "save", entry: newEntry })
-  }).then(() => {
-    loadStoredData(); // Refresh list from cloud
-  });
-}
-
-// Delete entry from Google Sheet
-function deleteEntryFromCloud(id) {
-  fetch(WEB_APP_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "delete", id: id })
-  }).then(() => {
-    loadStoredData(); // Refresh list from cloud
-  });
-}
-
