@@ -62,11 +62,10 @@ function saveEntryToCloud(entryObj) {
   fetch(WEB_APP_URL, {
     method: "POST",
     mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "save", entry: entryObj })
   }).then(() => {
-    // Re-fetch latest entries from sheet after saving
-    setTimeout(loadStoredData, 1000);
+    setTimeout(loadStoredData, 1500);
   }).catch(err => console.error("Cloud save failed:", err));
 }
 
@@ -75,10 +74,10 @@ function deleteEntryFromCloud(id) {
   fetch(WEB_APP_URL, {
     method: "POST",
     mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "delete", id: id })
   }).then(() => {
-    setTimeout(loadStoredData, 1000);
+    setTimeout(loadStoredData, 1500);
   }).catch(err => console.error("Cloud delete failed:", err));
 }
 
