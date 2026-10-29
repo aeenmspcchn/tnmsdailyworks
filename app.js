@@ -39,18 +39,7 @@ function loadStoredData() {
       workEntries = [];
     }
   } else {
-    workEntries = [
-      {
-        id: "1",
-        date: "2026-10-28",
-        typeOfWork: "Maintenance",
-        workDoneBy: "TA",
-        workDoneOn: "LD Centre",
-        description: "Shifting of all CC, hotline, and telephone connections in the LD Centre to facilitate the placement of new furniture under the ULDC upgradation project.",
-        timestamp: new Date().toISOString()
-      }
-    ];
-    saveEntries();
+    workEntries = []; // Starts completely empty with no hardcoded sample data
   }
 }
 
@@ -171,7 +160,7 @@ function handleFormSubmit(e) {
     alert("Work entry saved successfully!");
   }
 
-  saveEntries();
+    saveEntries();
 
   document.getElementById("formTypeOfWork").value = "";
   document.getElementById("formWorkDoneOn").value = "";
