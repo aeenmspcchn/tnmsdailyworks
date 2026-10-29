@@ -26,8 +26,9 @@ function populateUserDropdown() {
   const select = document.getElementById("loginUserSelect");
   if (!select) return;
   
-  select.innerHTML = '<option value="">-- Select Your Name --</option>' + 
-    SYSTEM_USERS.map(u => `<option value="${u.username}|${u.role}">${u.username} (${u.role})</option>`).join('');
+  // Displays ONLY the username in the dropdown list options
+  select.innerHTML = '<option value="">-- Select Username --</option>' + 
+    SYSTEM_USERS.map(u => `<option value="${u.username}|${u.role}">${u.username}</option>`).join('');
 }
 
 function loadStoredData() {
