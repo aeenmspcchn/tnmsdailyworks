@@ -1,14 +1,13 @@
 // ==========================================
 // 1. CONFIGURE USERS, ROLES & PASSWORDS HERE
 // ==========================================
-const SYSTEM_USERS = [
-  { username: "TA", role: "Operator", pin: "1234" },
-  { username: "JE2", role: "Operator", pin: "1234" },
-  { username: "AETNMS", role: "Supervisor", pin: "5678" },
-  { username: "admin", role: "Manager", pin: "admin99" },
-  { username: "AEETNMS", role: "Manager", pin: "admin99" }
-];
 
+const SYSTEM_USERS = [
+  { username: "John Doe", role: "Operator", pin: "1234" },
+  { username: "Jane Smith", role: "Operator", pin: "1234" },
+  { username: "Robert Fox", role: "Supervisor", pin: "5678" },
+  { username: "Emily Davis", role: "Manager", pin: "admin99" }
+];
 // Application State
 let currentUser = null;
 let workEntries = [];
