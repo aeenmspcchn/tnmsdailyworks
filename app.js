@@ -208,7 +208,7 @@ function handleFormSubmit(e) {
     
     workEntries.unshift(newEntry);
     saveEntryToCloud(newEntry);
-    alert("Work entry saved and synced to Google Drive!");
+    alert("Work entry saved and synced to Google Drive!"+newEntry);
   }
 
   localStorage.setItem("work_portal_entries", JSON.stringify(workEntries));
