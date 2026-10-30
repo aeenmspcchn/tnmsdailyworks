@@ -2,8 +2,7 @@
 // SYSTEM USERS & ROLES CONFIGURATION
 // ==========================================
 
-// Google Apps Script Web App URL
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxGxbov56zdClvtt4-AnXrJ1Hyqgkc33UKtTfGB4zVI2dYnnCnf9iphEIlwYwHUrJkc/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw98200Yl-PycO5yNL8JjnIm5OSWd8VlalOAEotA3mwWGr0wGS52B3IQ0PU45u2D_Bd/exec";
 
 const SYSTEM_USERS = [
   { username: "TA", role: "Operator" },
@@ -57,25 +56,37 @@ function loadStoredData() {
     });
 }
 
-// Save entry to Google Sheet
+// Save entry to Google Sheet via URL Parameters
 function saveEntryToCloud(entryObj) {
+  const params = new URLSearchParams();
+  params.append("action", "save");
+  params.append("id", entryObj.id || "");
+  params.append("date", entryObj.date || "");
+  params.append("typeOfWork", entryObj.typeOfWork || "");
+  params.append("workDoneBy", entryObj.workDoneBy || "");
+  params.append("workDoneOn", entryObj.workDoneOn || "");
+  params.append("description", entryObj.description || "");
+  params.append("timestamp", entryObj.timestamp || "");
+
   fetch(WEB_APP_URL, {
     method: "POST",
     mode: "no-cors",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "save", entry: entryObj })
+    body: params
   }).then(() => {
     setTimeout(loadStoredData, 1500);
   }).catch(err => console.error("Cloud save failed:", err));
 }
 
-// Delete entry from Google Sheet
+// Delete entry from Google Sheet via URL Parameters
 function deleteEntryFromCloud(id) {
+  const params = new URLSearchParams();
+  params.append("action", "delete");
+  params.append("id", id);
+
   fetch(WEB_APP_URL, {
     method: "POST",
     mode: "no-cors",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "delete", id: id })
+    body: params
   }).then(() => {
     setTimeout(loadStoredData, 1500);
   }).catch(err => console.error("Cloud delete failed:", err));
@@ -98,7 +109,6 @@ function checkAuthSession() {
   }
 }
 
-// Instant Login Handler
 function handleLogin(e) {
   e.preventDefault();
   const val = document.getElementById("loginUserSelect").value;
@@ -128,7 +138,6 @@ function updateUserUI() {
   document.getElementById("userAvatar").textContent = initials;
 }
 
-// Navigation Tabs
 function switchTab(tab) {
   const entrySection = document.getElementById("entrySection");
   const reportSection = document.getElementById("reportSection");
@@ -159,7 +168,6 @@ function switchTab(tab) {
   }
 }
 
-// Form Submission (Saves directly to Google Sheet)
 function handleFormSubmit(e) {
   e.preventDefault();
   
@@ -180,10 +188,7 @@ function handleFormSubmit(e) {
       timestamp: new Date().toISOString()
     };
     
-    // Update local state immediately
     workEntries = workEntries.map(item => item.id === editingEntryId ? updatedEntry : item);
-    
-    // Sync update to Google Sheet
     saveEntryToCloud(updatedEntry);
 
     editingEntryId = null;
@@ -201,16 +206,13 @@ function handleFormSubmit(e) {
       timestamp: new Date().toISOString()
     };
     
-    // Add locally and sync to Google Sheet
     workEntries.unshift(newEntry);
     saveEntryToCloud(newEntry);
     alert("Work entry saved and synced to Google Drive!");
   }
 
-  // Backup to localStorage
   localStorage.setItem("work_portal_entries", JSON.stringify(workEntries));
 
-  // Reset inputs
   document.getElementById("formTypeOfWork").value = "";
   document.getElementById("formWorkDoneOn").value = "";
   document.getElementById("formDescription").value = "";
@@ -284,7 +286,6 @@ function setFilterPreset(preset) {
   renderReports();
 }
 
-// Generate WhatsApp Formatted Report from Portal Data
 function copyWhatsAppReport() {
   const startDate = document.getElementById("filterStartDate").value;
   const endDate = document.getElementById("filterEndDate").value;
