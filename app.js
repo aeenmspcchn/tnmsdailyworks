@@ -225,7 +225,7 @@ function editEntry(id) {
   if (!entry) return;
 
   if (currentUser.role === 'Operator' && entry.workDoneBy !== currentUser.username) {
-    alert("Permission Denied: Operators can only edit their own work logs.");
+    alert("Permission Denied !!! you can edit your own work logs.");
     return;
   }
 
